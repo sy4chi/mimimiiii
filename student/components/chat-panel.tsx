@@ -1,0 +1,130 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { getSupabase } from "@/lib/supabase";
+
+type Message = {
+  id: number;
+  room: string;
+  sender: "student" | "teacher";
+  senderName: string;
+  body: string;
+  createdAt: string;
+};
+
+type MessageRow = {
+  id: number;
+  room: string;
+  sender: "student" | "teacher";
+  sender_name: string;
+  body: string;
+  created_at: string;
+};
+
+export function ChatPanel({ role, compact = false }: { role: "student" | "teacher"; compact?: boolean }) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const boxRef = useRef<HTMLDivElement>(null);
+  const ownName = role === "student" ? "학생" : "김선생";
+
+  const loadMessages = useCallback(async () => {
+    try {
+      const { data, error: queryError } = await getSupabase()
+        .from("messages")
+        .select("id, room, sender, sender_name, body, created_at")
+        .eq("room", "kim-math")
+        .order("id", { ascending: true })
+        .limit(100);
+      if (queryError) throw queryError;
+      setMessages(((data ?? []) as MessageRow[]).map((row) => ({
+        id: row.id,
+        room: row.room,
+        sender: row.sender,
+        senderName: row.sender_name,
+        body: row.body,
+        createdAt: row.created_at,
+      })));
+      setError("");
+    } catch {
+      setError("대화를 불러오지 못했어요. 환경변수와 Supabase 설정을 확인해 주세요.");
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadMessages();
+    const timer = window.setInterval(() => void loadMessages(), 1200);
+    return () => window.clearInterval(timer);
+  }, [loadMessages]);
+
+  useEffect(() => {
+    const box = boxRef.current;
+    if (box) box.scrollTop = box.scrollHeight;
+  }, [messages]);
+
+  async function sendMessage() {
+    const body = draft.trim();
+    if (!body || sending) return;
+    setSending(true);
+    setError("");
+    try {
+      const { error: insertError } = await getSupabase().from("messages").insert({
+        room: "kim-math",
+        sender: role,
+        sender_name: ownName,
+        body,
+      });
+      if (insertError) throw insertError;
+      setDraft("");
+      await loadMessages();
+    } catch {
+      setError("메시지를 보내지 못했어요. 환경변수와 Supabase 정책을 확인해 주세요.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="chat-panel">
+      <div ref={boxRef} className={`chat-scroll ${compact ? "compact" : ""}`} aria-live="polite">
+        {messages.length === 0 && !error ? (
+          <div className="chat-empty">아직 메시지가 없어요.<br />먼저 인사를 건네 보세요.</div>
+        ) : null}
+        {messages.map((message) => {
+          const mine = message.sender === role;
+          return (
+            <div className={`message-line ${mine ? "mine" : "theirs"}`} key={message.id}>
+              {!mine && <div className="message-avatar">{message.sender === "teacher" ? "김" : "학"}</div>}
+              <div className="message-stack">
+                {!mine && <span className="message-name">{message.senderName}</span>}
+                <div className="message-bubble">{message.body}</div>
+                <time>{new Date(message.createdAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {error && <p className="chat-error">{error}</p>}
+      <div className="composer">
+        <Input
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.nativeEvent.isComposing) void sendMessage();
+          }}
+          placeholder="메시지를 입력하세요"
+          maxLength={1000}
+          aria-label="메시지"
+        />
+        <Button onClick={() => void sendMessage()} disabled={!draft.trim() || sending} size="icon" aria-label="보내기">
+          <Send />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
