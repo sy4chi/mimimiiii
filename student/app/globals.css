@@ -52,6 +52,10 @@ button,a,input { font:inherit; } button { cursor:pointer; }
 .message-name { margin:0 0 4px 3px; color:#7e8590; font-size:11px; }
 .message-bubble { padding:10px 13px; border:1px solid #dfe3e9; border-radius:16px 16px 16px 4px; background:#fff; font-size:14px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
 .message-line.mine .message-bubble { border-color:var(--primary); border-radius:16px 16px 4px 16px; background:var(--primary); color:#fff; } .message-stack time { margin-top:3px; color:#9ba1aa; font-size:10px; }
+.message-meta { display:flex; align-items:center; gap:5px; margin-top:3px; }
+.message-delete { display:inline-grid; width:24px; height:24px; padding:0; place-items:center; border:0; border-radius:50%; background:transparent; color:#a0a6af; cursor:pointer; }
+.message-delete:hover { background:#fdecec; color:#d64f4f; } .message-delete:disabled { opacity:.45; cursor:wait; }
+.message-delete svg { width:13px; height:13px; }
 .composer { display:flex; gap:8px; padding:0 2px; } .composer input { height:44px; border-radius:22px; background:#fff; padding-inline:15px; } .composer button { width:44px; height:44px; border-radius:50%; }
 .chat-error { margin:0; color:#d64f4f; text-align:center; font-size:12px; }
 .room-card { width:100%; text-align:left; cursor:pointer; font:inherit; transition:border-color .18s ease, transform .18s ease, box-shadow .18s ease; }

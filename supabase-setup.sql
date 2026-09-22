@@ -23,8 +23,18 @@ create policy "Anyone can send chat messages"
   on public.messages for insert
   to anon, authenticated
   with check (
-    room = 'kim-math'
+    room ~ '^[a-z0-9-]{1,48}$'
     and sender in ('student', 'teacher')
     and char_length(sender_name) between 1 and 30
     and char_length(body) between 1 and 1000
   );
+
+drop policy if exists "Anyone can delete chat messages" on public.messages;
+create policy "Anyone can delete chat messages"
+  on public.messages for delete
+  to anon, authenticated
+  using (true);
+
+grant usage on schema public to anon, authenticated;
+grant select, insert, delete on public.messages to anon, authenticated;
+grant usage, select on sequence public.messages_id_seq to anon, authenticated;

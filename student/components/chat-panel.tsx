@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send } from "lucide-react";
+import { Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getSupabase } from "@/lib/supabase";
@@ -28,6 +28,7 @@ export function ChatPanel({ role, room = "kim-math", compact = false }: { role: 
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const boxRef = useRef<HTMLDivElement>(null);
   const ownName = role === "student" ? "학생" : "김선생";
@@ -88,6 +89,21 @@ export function ChatPanel({ role, room = "kim-math", compact = false }: { role: 
     }
   }
 
+  async function deleteMessage(id: number) {
+    if (deletingId !== null || !window.confirm("이 메시지를 삭제할까요?")) return;
+    setDeletingId(id);
+    setError("");
+    try {
+      const { error: deleteError } = await getSupabase().from("messages").delete().eq("id", id).eq("sender", role);
+      if (deleteError) throw deleteError;
+      setMessages((current) => current.filter((message) => message.id !== id));
+    } catch {
+      setError("메시지를 삭제하지 못했어요. Supabase 삭제 정책을 확인해 주세요.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="chat-panel">
       <div ref={boxRef} className={`chat-scroll ${compact ? "compact" : ""}`} aria-live="polite">
@@ -102,7 +118,10 @@ export function ChatPanel({ role, room = "kim-math", compact = false }: { role: 
               <div className="message-stack">
                 {!mine && <span className="message-name">{message.senderName}</span>}
                 <div className="message-bubble">{message.body}</div>
-                <time>{new Date(message.createdAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
+                <div className="message-meta">
+                  {mine && <button type="button" className="message-delete" onClick={() => void deleteMessage(message.id)} disabled={deletingId === message.id} aria-label="메시지 삭제"><Trash2 /></button>}
+                  <time>{new Date(message.createdAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
+                </div>
               </div>
             </div>
           );
