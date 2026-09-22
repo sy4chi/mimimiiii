@@ -24,7 +24,7 @@ type MessageRow = {
   created_at: string;
 };
 
-export function ChatPanel({ role, compact = false }: { role: "student" | "teacher"; compact?: boolean }) {
+export function ChatPanel({ role, room = "kim-math", compact = false }: { role: "student" | "teacher"; room?: string; compact?: boolean }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -37,7 +37,7 @@ export function ChatPanel({ role, compact = false }: { role: "student" | "teache
       const { data, error: queryError } = await getSupabase()
         .from("messages")
         .select("id, room, sender, sender_name, body, created_at")
-        .eq("room", "kim-math")
+        .eq("room", room)
         .order("id", { ascending: true })
         .limit(100);
       if (queryError) throw queryError;
@@ -53,7 +53,7 @@ export function ChatPanel({ role, compact = false }: { role: "student" | "teache
     } catch {
       setError("대화를 불러오지 못했어요. 환경변수와 Supabase 설정을 확인해 주세요.");
     }
-  }, []);
+  }, [room]);
 
   useEffect(() => {
     void loadMessages();
@@ -73,7 +73,7 @@ export function ChatPanel({ role, compact = false }: { role: "student" | "teache
     setError("");
     try {
       const { error: insertError } = await getSupabase().from("messages").insert({
-        room: "kim-math",
+        room,
         sender: role,
         sender_name: ownName,
         body,
@@ -127,4 +127,3 @@ export function ChatPanel({ role, compact = false }: { role: "student" | "teache
     </div>
   );
 }
-

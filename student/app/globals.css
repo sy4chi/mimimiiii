@@ -54,6 +54,12 @@ button,a,input { font:inherit; } button { cursor:pointer; }
 .message-line.mine .message-bubble { border-color:var(--primary); border-radius:16px 16px 4px 16px; background:var(--primary); color:#fff; } .message-stack time { margin-top:3px; color:#9ba1aa; font-size:10px; }
 .composer { display:flex; gap:8px; padding:0 2px; } .composer input { height:44px; border-radius:22px; background:#fff; padding-inline:15px; } .composer button { width:44px; height:44px; border-radius:50%; }
 .chat-error { margin:0; color:#d64f4f; text-align:center; font-size:12px; }
+.room-card { width:100%; text-align:left; cursor:pointer; font:inherit; transition:border-color .18s ease, transform .18s ease, box-shadow .18s ease; }
+.room-card:hover { border-color:color-mix(in srgb, var(--primary) 45%, var(--border)); transform:translateY(-1px); box-shadow:0 8px 24px rgba(32,49,78,.08); }
+.room-card-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; }
+.room-card-footer b { display:inline-flex; align-items:center; gap:5px; color:var(--primary); font-size:13px; }
+.room-card-footer svg { width:15px; height:15px; }
+.room-chat-dialog .chat-scroll.compact { height:min(52dvh, 430px); }
 .teacher-shell { width:min(100%,1040px); min-height:100dvh; margin:0 auto; display:grid; grid-template-columns:280px 1fr; background:#fff; box-shadow:0 12px 45px rgb(23 33 50 / 12%); }
 .teacher-sidebar { display:flex; flex-direction:column; padding:24px 18px; border-right:1px solid var(--border); background:#fbfcfe; }
 .teacher-brand { display:flex; align-items:center; gap:11px; } .teacher-brand > span { width:38px; height:38px; display:grid; place-items:center; background:var(--primary); color:#fff; font-weight:800; }

@@ -8,13 +8,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { getSupabase } from "@/lib/supabase";
 
 type Tab = "match" | "volunteer" | "place" | "calendar";
-type Room = { id: number; title: string; date?: string; time?: string; message?: string };
+type Room = { id: number; chatId: string; title: string; date?: string; time?: string; message?: string };
 
 const initialRooms: Room[] = [
-  { id: 1, title: "중2 수학 기초 멘토링 구해요!" },
-  { id: 2, title: "대전 영어 회화 단톡방" },
+  { id: 1, chatId: "mentoring-math-2", title: "중2 수학 기초 멘토링 구해요!" },
+  { id: 2, chatId: "mentoring-english-daejeon", title: "대전 영어 회화 단톡방" },
 ];
 
 export function StudentApp() {
@@ -23,12 +24,14 @@ export function StudentApp() {
   const [reserved, setReserved] = useState(false);
   const [rooms, setRooms] = useState<Room[]>(initialRooms);
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
-  function createRoom(event: FormEvent<HTMLFormElement>) {
+  async function createRoom(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const room: Room = {
       id: Date.now(),
+      chatId: `mentoring-${Date.now()}`,
       title: String(data.get("title") ?? "").trim(),
       date: String(data.get("date") ?? ""),
       time: String(data.get("time") ?? ""),
@@ -38,6 +41,8 @@ export function StudentApp() {
     setRooms((current) => [room, ...current]);
     setRoomDialogOpen(false);
     event.currentTarget.reset();
+    await getSupabase().from("messages").insert({ room: room.chatId, sender: "student", sender_name: "학생", body: room.message });
+    setSelectedRoom(room);
   }
 
   return (
@@ -64,7 +69,7 @@ export function StudentApp() {
         {tab === "volunteer" && (
           <section>
             <div className="section-heading-row"><h1 className="section-title">멘토링 단톡방 목록</h1><Button size="sm" onClick={() => setRoomDialogOpen(true)}><Plus /> 방 만들기</Button></div>
-            {rooms.map((room) => <div className="list-card" key={room.id}><strong>{room.title}</strong>{room.date && <span>{room.date} · {room.time}</span>}{room.message && <p className="room-preview">{room.message}</p>}<span>멘토/멘티 모집중</span></div>)}
+            {rooms.map((room) => <button type="button" className="list-card room-card" key={room.id} onClick={() => setSelectedRoom(room)}><strong>{room.title}</strong>{room.date && <span>{room.date} · {room.time}</span>}{room.message && <p className="room-preview">{room.message}</p>}<span className="room-card-footer">멘토/멘티 모집중 <b><MessageCircle /> 채팅하기</b></span></button>)}
           </section>
         )}
 
@@ -90,6 +95,13 @@ export function StudentApp() {
             <div><Label htmlFor="room-message">보낼 메시지</Label><Textarea id="room-message" name="message" placeholder="일정과 원하는 수업 내용을 알려주세요." required /></div>
             <Button type="submit" className="w-full">방 만들기</Button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={selectedRoom !== null} onOpenChange={(open) => { if (!open) setSelectedRoom(null); }}>
+        <DialogContent className="room-chat-dialog sm:max-w-lg">
+          <DialogHeader><DialogTitle>{selectedRoom?.title}</DialogTitle><DialogDescription>멘토와 멘티가 함께 이야기하는 단체채팅방입니다.</DialogDescription></DialogHeader>
+          {selectedRoom && <ChatPanel key={selectedRoom.chatId} role="student" room={selectedRoom.chatId} compact />}
         </DialogContent>
       </Dialog>
 
